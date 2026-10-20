@@ -6,12 +6,14 @@ import logging
 import os
 
 from pydantic_ai import Agent
+from pydantic_ai.models import Model
 
+from .gateway import gateway_model
 from .models import PullRequest, TriageResult
 
 log = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "openai:gpt-5.2"
+DEFAULT_MODEL = "gemini-3.7-flash"  # any model name the LLM gateway serves
 MAX_PATCH_CHARS = 2000
 
 INSTRUCTIONS = """\
@@ -45,10 +47,17 @@ def render(pr: PullRequest) -> str:
     return "\n".join(lines)
 
 
-def triage(pr: PullRequest, model: str | None = None) -> TriageResult:
+def resolve_model(model: str | Model | None) -> Model:
+    """A gateway model name (default TRIAGER_MODEL, then gemini-3.7-flash), or a ready Model."""
+    if isinstance(model, Model):
+        return model
+    return gateway_model(model or os.environ.get("TRIAGER_MODEL", DEFAULT_MODEL))
+
+
+def triage(pr: PullRequest, model: str | Model | None = None) -> TriageResult:
     """Triage one PR. Never raises: a broken triager must not block a PR."""
     try:
-        result = agent.run_sync(render(pr), model=model or os.environ.get("TRIAGER_MODEL", DEFAULT_MODEL))
+        result = agent.run_sync(render(pr), model=resolve_model(model))
         return result.output
     except Exception as exc:  # noqa: BLE001
         log.warning("Triage failed, using fallback: %s", exc)
