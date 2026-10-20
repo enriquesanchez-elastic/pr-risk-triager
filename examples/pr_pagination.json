@@ -1,0 +1,7 @@
+{
+  "title": "Add server-side pagination to the detection rules table",
+  "description": "Rules table now requests pages of 20 rules from the API instead of loading all rules.\nAcceptance criteria:\n- Table shows 20 rules per page with next/previous controls\n- Changing the sort column resets to page 1\n- Bulk-select only selects rules on the current page",
+  "files": [
+    {"filename": "x-pack/solutions/security/plugins/security_solution/public/rules/rules_table.tsx", "additions": 120, "deletions": 40, "patch": "+ const { data } = useFindRules({ page, perPage: 20, sortField });"}
+  ]
+}

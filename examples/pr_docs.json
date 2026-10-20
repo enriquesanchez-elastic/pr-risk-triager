@@ -1,0 +1,5 @@
+{
+  "title": "Update README with local setup instructions",
+  "description": "Docs only. No code changes.",
+  "files": [{"filename": "README.md", "additions": 25, "deletions": 3, "patch": "+ ## Local setup\n+ Run yarn kbn bootstrap"}]
+}
