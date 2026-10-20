@@ -34,3 +34,19 @@ The unit tests pass and CI is green. Nobody knows whether the triage is any good
 That is what the workshop fixes: this repo has **no evals yet**.
 
 The finished Python evals live on the `solution` branch. `kbn-evals/` holds the same eval for @kbn/evals (Lab B).
+
+## Evals (solution branch)
+
+| File | What it is |
+| --- | --- |
+| `evals/dataset.yaml` | 10 labelled PRs: risk label + what QA must cover |
+| `evals/evaluators.py` | RiskMatches, NoUnderestimate, SpecificFocus, NotFallback, optional LLM judge, confusion matrix |
+| `evals/check_evaluators.py` | Evaluators run on recorded outputs, no model needed |
+| `evals/run_evals.py` | The eval: `--model`, `--baseline`, `--repeat`, `--gate` |
+| `evals/stand_in.py` | A deliberately weak keyword model, so everything runs without an API key |
+
+```bash
+uv run python -m evals.check_evaluators
+uv run python -m evals.run_evals --model stand-in
+uv run python -m evals.run_evals --repeat 3 --gate 0.8      # needs OPENAI_API_KEY
+```

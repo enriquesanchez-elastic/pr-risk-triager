@@ -1,0 +1,22 @@
+name: Evals
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      JUDGE_MODEL: anthropic:claude-sonnet-4-5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync
+      # Pipeline check without a key: proves the evals still run.
+      - run: uv run python -m evals.run_evals --model stand-in
+      # The real gate. Fails the PR on any fallback, any under-rated risk, or accuracy below 80%.
+      - if: env.OPENAI_API_KEY != ''
+        run: uv run python -m evals.run_evals --repeat 3 --gate 0.8
