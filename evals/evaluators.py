@@ -12,6 +12,8 @@ from typing import Any
 
 from pydantic_evals.evaluators import ConfusionMatrixEvaluator, EvaluationReason, Evaluator, EvaluatorContext, LLMJudge
 
+from triager.gateway import gateway_model
+
 Output = dict[str, Any]
 RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
 GENERIC = re.compile(r"general regression|^test (the )?changes|^smoke test|^verify (the )?(feature|functionality)", re.I)
@@ -63,8 +65,8 @@ class NotFallback(Evaluator[dict, Output]):
 def focus_judge() -> LLMJudge | None:
     """LLM-as-a-judge for what code can't check: are the right things on the test list?
 
-    Enabled when JUDGE_MODEL is set, e.g. anthropic:claude-sonnet-4-5 (plus that provider's key).
-    Use a different model family from the one being evaluated.
+    Enabled when JUDGE_MODEL is set to a gateway model, e.g. claude-sonnet-4-6.
+    Use a different model family from the one being evaluated (the triager defaults to Gemini).
     """
     model = os.environ.get("JUDGE_MODEL")
     if not model:
@@ -76,7 +78,7 @@ def focus_judge() -> LLMJudge | None:
             "and every focus area is specific to this PR. If must_cover is empty, PASS only if the "
             "focus areas are few and proportionate to a low-risk change."
         ),
-        model=model,
+        model=gateway_model(model),
         include_input=True,
         include_expected_output=True,
     )

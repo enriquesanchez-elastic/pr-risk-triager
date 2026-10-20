@@ -1,4 +1,4 @@
-"""A deliberately weak keyword "model", so the eval pipeline runs without an API key.
+"""A deliberately weak keyword "model", so the eval pipeline runs without the gateway.
 
 Use it to learn the workflow (--model stand-in). Its scores mean nothing about the real
 triager; they only show that the evaluators react to good and bad answers.

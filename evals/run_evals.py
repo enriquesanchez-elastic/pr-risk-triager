@@ -1,11 +1,13 @@
 """Steps 3-6 — run the triager over the dataset and score it.
 
-    uv run python -m evals.run_evals --model stand-in                 # no API key needed
-    uv run python -m evals.run_evals                                  # real model (TRIAGER_MODEL or openai:gpt-5.2)
-    JUDGE_MODEL=anthropic:claude-sonnet-4-5 uv run python -m evals.run_evals   # + LLM judge
+    uv run python -m evals.run_evals --model stand-in                 # no gateway needed
+    uv run python -m evals.run_evals                                  # gateway model (TRIAGER_MODEL or gemini-3.7-flash)
+    JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals    # + LLM judge
     uv run python -m evals.run_evals --repeat 3                       # run-to-run variance
     uv run python -m evals.run_evals --baseline stand-in              # compare against another model
     uv run python -m evals.run_evals --gate 0.8                       # exit 1 below the bar (CI)
+
+Gateway models need an Okta token: run `els auth login --env $ELS_ENV` (default prod) first.
 """
 
 from __future__ import annotations
@@ -24,6 +26,7 @@ from pydantic_evals.reporting import EvaluationReport
 from evals.evaluators import all_evaluators, risk_confusion_matrix
 from evals.stand_in import stand_in_model
 from triager import PullRequest, triage
+from triager.gateway import els_token
 
 DATASET = Path(__file__).with_name("dataset.yaml")
 MUST_PASS = ("NotFallback", "NoUnderestimate")  # any failure here fails the gate
@@ -56,8 +59,16 @@ def make_task(model: Any):
 
 
 def resolve(model: str | None) -> Any:
-    model = model or os.environ.get("TRIAGER_MODEL", "openai:gpt-5.2")
+    model = model or os.environ.get("TRIAGER_MODEL", "gemini-3.7-flash")
     return stand_in_model if model == "stand-in" else model
+
+
+def check_signed_in() -> None:
+    """Get one gateway token up front, so els signs you in once instead of once per worker."""
+    try:
+        els_token()
+    except Exception as exc:  # noqa: BLE001
+        print(f"WARNING: no gateway token ({exc}). Every gateway call will fail and the triager will fall back.")
 
 
 def run(dataset: Dataset, model: str | None, name: str | None, repeat: int) -> EvaluationReport:
@@ -85,6 +96,9 @@ def main() -> int:
     dataset.evaluators = all_evaluators()
     dataset.report_evaluators = [risk_confusion_matrix]
 
+    models = [args.model or os.environ.get("TRIAGER_MODEL", "gemini-3.7-flash"), args.baseline]
+    if any(m and m != "stand-in" for m in models) or os.environ.get("JUDGE_MODEL"):
+        check_signed_in()
     baseline = run(dataset, args.baseline, None, args.repeat) if args.baseline else None
     report = run(dataset, args.model, args.name, args.repeat)
     report.print(baseline=baseline, include_reasons=True)

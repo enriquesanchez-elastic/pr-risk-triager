@@ -43,10 +43,10 @@ The finished Python evals live on the `solution` branch. `kbn-evals/` holds the 
 | `evals/evaluators.py` | RiskMatches, NoUnderestimate, SpecificFocus, NotFallback, optional LLM judge, confusion matrix |
 | `evals/check_evaluators.py` | Evaluators run on recorded outputs, no model needed |
 | `evals/run_evals.py` | The eval: `--model`, `--baseline`, `--repeat`, `--gate` |
-| `evals/stand_in.py` | A deliberately weak keyword model, so everything runs without an API key |
+| `evals/stand_in.py` | A deliberately weak keyword model, so everything runs without the gateway |
 
 ```bash
 uv run python -m evals.check_evaluators
 uv run python -m evals.run_evals --model stand-in
-uv run python -m evals.run_evals --repeat 3 --gate 0.8      # needs OPENAI_API_KEY
+uv run python -m evals.run_evals --repeat 3 --gate 0.8      # needs a gateway token (els auth login)
 ```

@@ -7,16 +7,14 @@ on:
 jobs:
   evals:
     runs-on: ubuntu-latest
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      JUDGE_MODEL: anthropic:claude-sonnet-4-5
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
       - run: uv sync
-      # Pipeline check without a key: proves the evals still run.
+      # Pipeline check without the gateway: proves the evals still run and the evaluators still fire.
       - run: uv run python -m evals.run_evals --model stand-in
-      # The real gate. Fails the PR on any fallback, any under-rated risk, or accuracy below 80%.
-      - if: env.OPENAI_API_KEY != ''
-        run: uv run python -m evals.run_evals --repeat 3 --gate 0.8
+      # The real gate needs a gateway identity. People use els (Okta); CI can't. Applications call the
+      # gateway as an approved GCP service account with a Google ID token (test and prod only), so this
+      # step belongs in a pipeline that runs as such an account, e.g. on GKE with Workload Identity.
+      # Swap the els token source in src/triager/gateway.py for that ID token, then:
+      #   uv run python -m evals.run_evals --repeat 3 --gate 0.8
