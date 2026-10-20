@@ -23,4 +23,4 @@ The model defaults to `openai:gpt-5.2`; override with `--model` or `TRIAGER_MODE
 The unit tests pass and CI is green. Nobody knows whether the triage is any good.
 That is what the workshop fixes: this repo has **no evals yet**.
 
-The finished evals live on the `solution` branch.
+The finished Python evals live on the `solution` branch. `kbn-evals/` holds the same eval for @kbn/evals (Lab B).
