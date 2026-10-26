@@ -111,7 +111,9 @@ Then simulate being signed out:
 ELS_BIN=false uv run python -m evals.run_evals
 ```
 
-The preflight warns, but the run completes: every PR comes back `medium`, nothing crashes, and only `NotFallback` (0%) and `SpecificFocus` (0%) say so.
+The preflight warns, but the run completes and nothing crashes: every PR comes back `medium`. Every case now fails `NotFallback` and `SpecificFocus` (both 0%), and the label scores collapse too: `RiskMatches` 20%, `NoUnderestimate` 70% (the three `high` PRs are rated `medium`). Without `NotFallback` you would only see the label scores drop, with no hint that the model never ran.
+
+With Gemini 3.7 Flash the baseline scores 100% on all four code evaluators. A perfect score on 10 cases is a ceiling, not proof the triager is good: which cases would you add to make it fail?
 
 ### A5. Judge and compare (2 min)
 
@@ -122,6 +124,8 @@ JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --baseline stand-
 ```
 
 `--baseline` runs a second model and prints a per-case diff, so you see which cases a change fixed and which it broke.
+
+With Gemini as the model and Claude as judge, expect `LLMJudge` around 90%.
 
 ### A6. Repeat and gate (2 min)
 
