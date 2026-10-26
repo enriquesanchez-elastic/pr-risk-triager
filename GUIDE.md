@@ -137,6 +137,14 @@ git checkout origin/solution -- .github/workflows/evals.yml
 
 Each case runs 3 times, so you see the spread. The gate exits 1 if any fallback happened, any risk was under-rated, or `RiskMatches` is below 80%. With the stand-in it fails on `NoUnderestimate`, as it should.
 
+With the real default model the gate passes (all four code evaluators 100%, `GATE PASSED`, exit 0). Try the other families:
+
+```bash
+JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --model gpt-5.4 --repeat 3 --gate 0.8
+```
+
+We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by its own family, so prefer a Gemini or GPT judge for it); `gpt-5.4` **fails** (`RiskMatches` 90%, `NoUnderestimate` 90%, `LLMJudge` 83%). The miss is the same case on all 3 repeats: `viewer-api-keys`, a `high` PR that GPT rates `medium`. Same PRs, same prompt, different model: that is the case for evals.
+
 `evals.yml` runs the stand-in on every PR. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
 
 ## Lab B: the same eval in @kbn/evals
