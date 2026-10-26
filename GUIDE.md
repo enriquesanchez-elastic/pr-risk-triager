@@ -18,7 +18,7 @@ The repo has two branches. `main` is the starting point: the tool, 8 unit tests,
 - [ ] Clone the repo (`git clone https://github.com/enriquesanchez-elastic/pr-risk-triager.git`; it is private, so you need read access), run `uv sync`, then `uv run pytest` (8 passed)
 - [ ] Run `uv add --dev pydantic-evals`
 - [ ] Run `els auth login --env prod` once. You must be in exactly one `AgentRouter - <tier>` Okta group. Use `ELS_ENV=dev` or `test` for another environment (test allows 27,500 tokens per hour: too few for a full run with the judge)
-- [ ] Lab B only: `yarn kbn bootstrap` in Kibana, then `node scripts/evals doctor`
+- [ ] Lab B only, in Kibana: `corepack enable` and `corepack prepare pnpm@12.4.2 --activate` (first time only), then `pnpm kbn bootstrap` (older Kibana checkouts use `yarn kbn bootstrap`), then `node scripts/evals doctor`. Scout and the EDOT collector show as not running until B1 starts them
 
 Not signed in? Every step except the LLM judge runs with `--model stand-in`, a deliberately weak keyword model in `evals/stand_in.py`. Its scores say nothing about the real triager; it exists so the pipeline runs anywhere.
 
@@ -149,6 +149,8 @@ We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by it
 
 ## Lab B: the same eval in @kbn/evals
 
+> **Facilitator note:** Lab A is verified end to end, from a fresh clone. Lab B was verified only as far as bootstrap, Vault, Scout start-up and a partial `smoke-tests` run (1 passed; 5 failed on a Kibana-side 500 when creating the EIS connector), and its spec against this guide statically. Run B1 yourself before the session.
+
 You finish Lab B with the triage eval running as a Kibana suite: three PRs, three code evaluators, the criteria judge and token counts, stored as an experiment in the evals UI. The spec is in the repo at `kbn-evals/evals/pr_triage.spec.ts`. Commands run from the Kibana repo root.
 
 Lab B calls models through Kibana connectors, not the LLM gateway, so `els` is not involved.
@@ -179,7 +181,13 @@ node scripts/evals start --profile local \
 
 The suite isn't registered in `evals.suites.json`, so `--config` points at it directly. Connector ids come from `node scripts/evals init`. Pick a judge from a different family than both models.
 
+Gotchas:
+- Each `--model` must also be a Playwright project of the suite, and that list can lag the live connectors. If you see `Project(s) "<id>" not found`, the error lists the valid ids: pick one of those (for example `eis-google-gemini-3-0-flash`, not `eis-google-gemini-3-7-flash`).
+- Without a TTY (scripts, CI, an agent) the connector prompt can't appear. Pass `--evaluation-connector-id <judge-connector>` and `--model` explicitly. `node scripts/evals start` prints the re-run command with the ids it used.
+
 ### B4. Compare in the UI (1 min)
+
+`--profile local` exports results to the Elasticsearch and Kibana URLs in `x-pack/platform/packages/shared/kbn-evals/scripts/vault/config.local.json`, which default to `localhost:9200` and `localhost:5601`: a separate dev stack (`pnpm es snapshot` and `pnpm start`). The Scout stack that `evals start` launches listens elsewhere (ES `:9220`, Kibana `:5620`). Either run the dev stack, or edit the two URLs in `config.local.json` to Scout's ports (and drop the `/dev` base path from the Kibana URL).
 
 In the Kibana your profile exports to (local: the URL in `config.local.json`), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired t-test per evaluator), or run `node scripts/evals compare <exp-1> <exp-2>`. The Tracing tab shows the spans the token evaluators read.
 
@@ -208,5 +216,9 @@ If you finish early, pick one.
 | No `LLMJudge` column | `JUDGE_MODEL` unset | Set it to a gateway model name, e.g. `claude-sonnet-4-6` |
 | `expected_output … valid list` error | Dataset typed with a list output | Keep `Dataset[dict, Any, dict]` |
 | "No connectors found" (Lab B) | Not in a TTY, or stale cache | Run in a terminal; `rm ~/.elastic/eis-connectors-cache.json` |
+| `EVAL_CONNECTOR_ID is required` (Lab B) | No TTY, so no connector prompt | Pass `--evaluation-connector-id <id>` and `--model <id>` |
+| `Project(s) "<id>" not found` (Lab B) | `--model` is not a Playwright project of the suite | Pick an id from the error's list |
+| `fetch failed` on `localhost:5601/dev/...` (Lab B) | Local profile points at a dev Kibana that isn't running | Start it, or point `config.local.json` at Scout's `:9220`/`:5620` (see B4) |
+| `pnpm is required` / Yarn "configured to use pnpm" (Lab B) | Corepack not enabled | `corepack enable`, `corepack prepare pnpm@12.4.2 --activate`, then `pnpm kbn bootstrap` |
 | Scout hangs on start | Old services still running | `node scripts/evals stop`, then retry |
 | 429 errors in Lab B | Too many concurrent calls | Lower `--concurrency` |
