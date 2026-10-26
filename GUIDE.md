@@ -149,7 +149,7 @@ We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by it
 
 ## Lab B: the same eval in @kbn/evals
 
-> **Facilitator note:** Lab A is verified end to end, from a fresh clone. Lab B was verified only as far as bootstrap, Vault, Scout start-up and a partial `smoke-tests` run (1 passed; 5 failed on a Kibana-side 500 when creating the EIS connector), and its spec against this guide statically. Run B1 yourself before the session.
+> **Facilitator note:** Lab A and Lab B are both verified end to end. Lab B ran on a clean upstream Kibana `main` (a separate `git worktree`): bootstrap, scaffold, B3 against `eis-google-gemini-3-0-flash` and `eis-openai-gpt-5-2` with `eis-anthropic-claude-4-6-sonnet` as judge (2 passed, about 3.6 min), and `node scripts/evals compare`. Known wrinkle: the `inputTokens`/`outputTokens` evaluators scored null in that run (the Tokens column shows `-`). The UI half of B4 was not opened. Run B1 yourself before the session.
 
 You finish Lab B with the triage eval running as a Kibana suite: three PRs, three code evaluators, the criteria judge and token counts, stored as an experiment in the evals UI. The spec is in the repo at `kbn-evals/evals/pr_triage.spec.ts`. Commands run from the Kibana repo root.
 
@@ -189,7 +189,7 @@ Gotchas:
 
 `--profile local` exports results to the Elasticsearch and Kibana URLs in `x-pack/platform/packages/shared/kbn-evals/scripts/vault/config.local.json`, which default to `localhost:9200` and `localhost:5601`: a separate dev stack (`pnpm es snapshot` and `pnpm start`). The Scout stack that `evals start` launches listens elsewhere (ES `:9220`, Kibana `:5620`). Either run the dev stack, or edit the two URLs in `config.local.json` to Scout's ports (and drop the `/dev` base path from the Kibana URL).
 
-In the Kibana your profile exports to (local: the URL in `config.local.json`), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired t-test per evaluator), or run `node scripts/evals compare <exp-1> <exp-2>`. The Tracing tab shows the spans the token evaluators read.
+In the Kibana your profile exports to (local: the URL in `config.local.json`), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired t-test per evaluator), or run `EVAL_KBN_URL=<kibana-url> node scripts/evals compare <exp-1> <exp-2>` (the experiment ids are printed at the end of each run; `compare` has no `--profile` flag and reads `EVAL_KBN_URL`, for Scout use `http://elastic:changeme@localhost:5620`). The Tracing tab shows the spans the token evaluators read.
 
 ## Stretch goals
 
@@ -220,5 +220,6 @@ If you finish early, pick one.
 | `Project(s) "<id>" not found` (Lab B) | `--model` is not a Playwright project of the suite | Pick an id from the error's list |
 | `fetch failed` on `localhost:5601/dev/...` (Lab B) | Local profile points at a dev Kibana that isn't running | Start it, or point `config.local.json` at Scout's `:9220`/`:5620` (see B4) |
 | `pnpm is required` / Yarn "configured to use pnpm" (Lab B) | Corepack not enabled | `corepack enable`, `corepack prepare pnpm@12.4.2 --activate`, then `pnpm kbn bootstrap` |
+| `Inference with id … already exists` 500 on connector create (Lab B) | Seen on a long-lived Kibana checkout with local, uncommitted evals code; upstream `main` in a clean `git worktree` worked | Retry in a clean worktree on `origin/main` (`git worktree add ../kibana-clean origin/main --detach`, then bootstrap) |
 | Scout hangs on start | Old services still running | `node scripts/evals stop`, then retry |
 | 429 errors in Lab B | Too many concurrent calls | Lower `--concurrency` |
