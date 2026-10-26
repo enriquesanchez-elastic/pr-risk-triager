@@ -15,7 +15,7 @@ The repo has two branches. `main` is the starting point: the tool, 8 unit tests,
 
 ### Set up before the session
 
-- [ ] Clone the repo, run `uv sync`, then `uv run pytest` (8 passed)
+- [ ] Clone the repo (`git clone https://github.com/enriquesanchez-elastic/pr-risk-triager.git`; it is private, so you need read access), run `uv sync`, then `uv run pytest` (8 passed)
 - [ ] Run `uv add --dev pydantic-evals`
 - [ ] Run `els auth login --env prod` once. You must be in exactly one `AgentRouter - <tier>` Okta group. Use `ELS_ENV=dev` or `test` for another environment (test allows 27,500 tokens per hour: too few for a full run with the judge)
 - [ ] Lab B only: `yarn kbn bootstrap` in Kibana, then `node scripts/evals doctor`
