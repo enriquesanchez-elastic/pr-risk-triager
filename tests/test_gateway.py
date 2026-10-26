@@ -51,11 +51,9 @@ def mock_gateway(tmp_path, monkeypatch):
     monkeypatch.setenv("LLM_GATEWAY_URL", f"http://127.0.0.1:{server.server_port}/v1")
     monkeypatch.setenv("ELS_BIN", str(els))
     monkeypatch.setenv("ELS_ENV", "dev")
-    gateway._provider.cache_clear()
     CALLS.clear()
     yield
     server.shutdown()
-    gateway._provider.cache_clear()
 
 
 def test_gpt_models_use_the_responses_api_and_others_chat_completions():
@@ -84,6 +82,5 @@ def test_triage_calls_the_gateway_with_an_els_token(mock_gateway):
 
 def test_not_signed_in_falls_back(mock_gateway, monkeypatch):
     monkeypatch.setenv("ELS_BIN", "false")  # els fails: no token
-    gateway._provider.cache_clear()
     assert triage(PullRequest(title="t"), model="gemini-3.7-flash") == FALLBACK
     assert CALLS == []
