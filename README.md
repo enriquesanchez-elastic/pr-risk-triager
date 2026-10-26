@@ -33,4 +33,6 @@ GPT models go through the gateway's Responses API, everything else through chat 
 The unit tests pass and CI is green. Nobody knows whether the triage is any good.
 That is what the workshop fixes: this repo has **no evals yet**.
 
+**Running the session? Follow [GUIDE.md](GUIDE.md).**
+
 The finished Python evals live on the `solution` branch. `kbn-evals/` holds the same eval for @kbn/evals (Lab B).
