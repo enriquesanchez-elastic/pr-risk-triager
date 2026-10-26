@@ -14,7 +14,6 @@ from __future__ import annotations
 import asyncio
 import os
 import subprocess
-from functools import cache
 
 from openai import AsyncOpenAI
 from pydantic_ai.models import Model
@@ -46,7 +45,8 @@ def els_token(env: str | None = None) -> str:
     return subprocess.check_output([els, "auth", "login", "--env", env or gateway_env()], text=True).strip()
 
 
-@cache
+# Not cached: an AsyncOpenAI client binds to the event loop it first runs in, and callers
+# (the triage task, the eval judge) run in different loops.
 def _provider(env: str) -> OpenAIProvider:
     async def token() -> str:  # called before every request, so expiry is handled
         return await asyncio.to_thread(els_token, env)
