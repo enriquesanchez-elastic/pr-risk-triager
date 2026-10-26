@@ -68,5 +68,11 @@ def gateway_model(name: str, env: str | None = None) -> Model:
         name,
         provider=provider,
         settings=settings,
-        profile=OpenAIModelProfile(openai_chat_supports_max_completion_tokens=False),
+        profile=OpenAIModelProfile(
+            openai_chat_supports_max_completion_tokens=False,
+            # Claude on Vertex rejects strict tool schemas: the gateway turns them into
+            # structured_outputs, which an org policy blocks. Plain tool calls work everywhere.
+            openai_supports_strict_tool_definition=False,
+            default_structured_output_mode="tool",
+        ),
     )
