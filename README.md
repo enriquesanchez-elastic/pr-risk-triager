@@ -33,11 +33,17 @@ GPT models go through the gateway's Responses API, everything else through chat 
 The unit tests pass and CI is green. Nobody knows whether the triage is any good.
 That is what the workshop fixes: this repo has **no evals yet**.
 
-**Running the session? Follow [GUIDE.md](GUIDE.md).**
+**Running the session? Start with [GUIDE.md](GUIDE.md).**
 
-The finished Python evals live on the `solution` branch. `kbn-evals/` holds the same eval for @kbn/evals (Lab B).
+## Branches
 
-## Evals (solution branch)
+| Branch | What it holds | Used for |
+| --- | --- | --- |
+| `main` | The tool, 8 unit tests, CI. No evals. | Clone target and Lab A step A1 |
+| `lab-a` | `main` plus `LAB-A.md` and the full `evals/` folder | Lab A: `git checkout lab-a`, then follow `LAB-A.md` |
+| `lab-b` | `main` plus `LAB-B.md` and `kbn-evals/` | Lab B: files you copy into a Kibana checkout, then follow `LAB-B.md` |
+
+## Evals (this branch)
 
 | File | What it is |
 | --- | --- |
