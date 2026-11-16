@@ -33,12 +33,12 @@ GPT models go through the gateway's Responses API, everything else through chat 
 The unit tests pass and CI is green. Nobody knows whether the triage is any good.
 That is what the workshop fixes: this repo has **no evals yet**.
 
-**Running the session? Start with [GUIDE.md](GUIDE.md).**
+**Running the session? Start with [GUIDE.md](GUIDE.md).** The session takes about 45 minutes, 25 of them hands-on.
 
 ## Branches
 
 | Branch | What it holds | Used for |
 | --- | --- | --- |
-| `main` | The tool, 8 unit tests, CI. No evals. | Clone target and Lab A step A1 |
-| `lab-a` | `main` plus `LAB-A.md` and the full `evals/` folder | Lab A: `git checkout lab-a`, then follow `LAB-A.md` |
-| `lab-b` | `main` plus `LAB-B.md` and `kbn-evals/` | Lab B: files you copy into a Kibana checkout, then follow `LAB-B.md` |
+| `main` | The tool, 8 unit tests, CI. No evals. | Clone target: the tool as it is today |
+| `lab-a` | `main` plus `LAB-A.md` and the full `evals/` folder | Lab A: `git checkout lab-a`, then follow [`LAB-A.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-a/LAB-A.md) |
+| `lab-b` | `main` plus `LAB-B.md` and `kbn-evals/` | Lab B: files you copy into a Kibana checkout, then follow [`LAB-B.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-b/LAB-B.md) |
