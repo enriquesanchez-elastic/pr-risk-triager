@@ -36,7 +36,7 @@ Scaffold a suite named `lab` with the `evals-create-suite` agent skill. It creat
 2. **Task**: one `inferenceClient.chatComplete` call, bound to the model of the current Playwright project, asking for JSON.
 3. **Evaluators**: `ValidJson`, `RiskMatches` and `NoUnderestimate` (CODE, each with `direction: 'maximize'`), `evaluators.criteria([...])` named `FocusCoverage`, and the trace-based `inputTokens` and `outputTokens`.
 
-### Before B3: point the results at Scout (1 min)
+### Before B3: point the results at Scout
 
 `--profile local` exports results to the Elasticsearch and Kibana URLs in `x-pack/platform/packages/shared/kbn-evals/scripts/vault/config.local.json`, which default to `localhost:9200` and `localhost:5601`: a separate dev stack (`pnpm es snapshot` and `pnpm start`). The Scout stack that `evals start` launches listens elsewhere (ES `:9220`, Kibana `:5620`). Either run the dev stack, or point everything at Scout's ports:
 - In `config.local.json`: the two Elasticsearch URLs to `:9220`, and the Kibana URL to `:5620` (no `/dev` base path).
