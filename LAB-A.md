@@ -110,7 +110,7 @@ With the real default model (`uv run python -m evals.run_evals --repeat 3 --gate
 JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --model gpt-5.4 --repeat 3 --gate 0.8
 ```
 
-We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by its own family, so prefer a Gemini or GPT judge for it); `gpt-5.4` **fails** (`RiskMatches` 90%, `NoUnderestimate` 90%, `LLMJudge` 83%). The miss is the same case on all 3 repeats: `viewer-api-keys`, a `high` PR that GPT rates `medium`. Same PRs, same prompt, different model: that is the case for evals.
+We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by its own family, so prefer a Gemini or GPT judge for it); `gpt-5.4` **fails** `NoUnderestimate`, in every run we saw. In one run: `RiskMatches` 90%, `NoUnderestimate` 90%, `LLMJudge` 83%, with 3 misses in 30 runs, all `viewer-api-keys`, a `high` PR that GPT rates `medium`. In a second run: `RiskMatches` 93%, `NoUnderestimate` 93%, `SpecificFocus` 90%, `LLMJudge` 93%, with 2 misses in 30 runs. The scores move by a few points between runs; the gate result should not. Your numbers will differ. Same PRs, same prompt, different model: that is the case for evals.
 
 Open `.github/workflows/evals.yml`. It runs the stand-in on every PR. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
 
