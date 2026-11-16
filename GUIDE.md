@@ -2,7 +2,7 @@
 
 ## Before you start
 
-In about 25 minutes of hands-on work you take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
+The session takes about 45 minutes, 25 of them hands-on. You take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
 
 The tool is `pr-risk-triager`: give it a pull request and it returns a risk level (`low`, `medium`, `high`), up to 5 focus areas for QA, and a rationale. It is one LLM call through pydantic-ai and Elastic's LLM gateway (AgentRouter).
 
@@ -10,9 +10,9 @@ The tool is `pr-risk-triager`: give it a pull request and it returns a risk leve
 
 | Part | Time | Branch | Guide | Needs |
 | --- | --- | --- | --- | --- |
-| Lab A: Python + pydantic-evals | 18 min | `lab-a` | `LAB-A.md` | Python 3.12, uv; `els` signed in to the gateway from step A4 on (optional) |
+| Lab A: Python + pydantic-evals | 18 min | `lab-a` | [`LAB-A.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-a/LAB-A.md) | Python 3.12, uv; `els` signed in to the gateway from step A4 on (optional) |
 | Evals in Kibana (walkthrough) | 5 min | none | slides | Nothing |
-| Lab B: @kbn/evals | 7 min | `lab-b` | `LAB-B.md` | A Kibana checkout, bootstrapped; `vault login --method oidc` for EIS models |
+| Lab B: @kbn/evals | 7 min | `lab-b` | [`LAB-B.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-b/LAB-B.md) | A Kibana checkout, bootstrapped; `vault login --method oidc` for EIS models |
 
 `main` is the starting point: the tool, 8 unit tests, CI running pytest, no evals. Lab A is on `lab-a` (`main` plus the full `evals/` folder). Lab B is on `lab-b` (`main` plus `kbn-evals/`; its files are copied into a Kibana checkout).
 
@@ -33,8 +33,6 @@ There are no API keys anywhere in the repo. Every real model call in Lab A goes 
 | `ELS_BIN` | `els` | Path to `els` if it is not on your PATH |
 | `TRIAGER_MODEL` / `--model` | `gemini-3.7-flash` | Model being evaluated: any gateway model name |
 | `JUDGE_MODEL` | unset | Model for the LLM judge. Use a different family from the one being evaluated |
-
-Model families that work through the gateway: Gemini and Claude (chat completions), GPT (Responses API). `src/triager/gateway.py` handles both.
 
 Model families that work through the gateway: Gemini and Claude (chat completions), GPT (Responses API). `src/triager/gateway.py` handles both.
 

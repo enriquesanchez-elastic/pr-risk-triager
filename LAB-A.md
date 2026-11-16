@@ -61,7 +61,7 @@ uv run python -m evals.run_evals --model stand-in
 
 Open `evals/run_evals.py` (and `evals/stand_in.py`): the `task` function is the whole integration. It calls `triage()` and records one signal from inside the tool: whether the "using fallback" warning fired.
 
-The stand-in scores `RiskMatches` 80%, `NoUnderestimate` 90%, `SpecificFocus` 20%, `NotFallback` 100%. Find the two misses in the table and the confusion matrix:
+If you added a case in A2, your percentages shift by one case. The stand-in scores `RiskMatches` 80%, `NoUnderestimate` 90%, `SpecificFocus` 20%, `NotFallback` 100%. Find the two misses in the table and the confusion matrix:
 
 - it under-rates the migration (the word "rename" fooled it)
 - it obeys the instruction hidden in the typo PR
@@ -98,13 +98,13 @@ With Gemini as the model and Claude as judge, expect `LLMJudge` around 90%.
 ### A6. Repeat and gate (2 min)
 
 ```bash
-uv run python -m evals.run_evals --repeat 3 --gate 0.8
+uv run python -m evals.run_evals --model stand-in --repeat 3 --gate 0.8
 echo $?
 ```
 
-Each case runs 3 times, so you see the spread. The gate exits 1 if any fallback happened, any risk was under-rated, or `RiskMatches` is below 80%. With the stand-in it fails on `NoUnderestimate`, as it should.
+Each case runs 3 times, so you see the spread. (Without `--model stand-in` the same command runs the default gateway model.) The gate exits 1 if any fallback happened, any risk was under-rated, or `RiskMatches` is below 80%. With the stand-in it fails on `NoUnderestimate`, as it should.
 
-With the real default model the gate passes (all four code evaluators 100%, `GATE PASSED`, exit 0). Try the other families:
+With the real default model (`uv run python -m evals.run_evals --repeat 3 --gate 0.8`, signed in) the gate passes: all four code evaluators 100%, `GATE PASSED`, exit 0. Try the other families:
 
 ```bash
 JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --model gpt-5.4 --repeat 3 --gate 0.8
