@@ -2,7 +2,7 @@
 
 ## Before you start
 
-The session takes about 45 minutes, 25 of them hands-on. You take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
+The session takes under 50 minutes, 25 of them hands-on. You take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
 
 The tool is `pr-risk-triager`: give it a pull request and it returns a risk level (`low`, `medium`, `high`), up to 5 focus areas for QA, and a rationale. It is one LLM call through pydantic-ai and Elastic's LLM gateway (AgentRouter).
 
