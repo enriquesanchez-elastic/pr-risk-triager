@@ -4,7 +4,7 @@ Verified on upstream Kibana `main`, November 2026, in a clean `git worktree`: bo
 
 ## Before you start
 
-You need a Kibana checkout, bootstrapped, before the session. Use a clean worktree on upstream `main`:
+You need a Kibana checkout, bootstrapped, before the session. Use a clean worktree on upstream `main`. Run the first command inside an existing Kibana clone whose `origin` is `elastic/kibana`:
 
 ```bash
 git worktree add ../kibana-clean origin/main --detach
@@ -14,7 +14,7 @@ pnpm kbn bootstrap
 node scripts/evals doctor
 ```
 
-This repo (`git checkout lab-b`) supplies the two files you copy in: `kbn-evals/playwright.config.ts` and `kbn-evals/evals/pr_triage.spec.ts`. Lab B does not use the LLM gateway or `els`. It needs `vault login --method oidc` for the EIS models.
+This repo (`git checkout lab-b`) supplies the two files you copy in: `kbn-evals/playwright.config.ts` and `kbn-evals/evals/pr_triage.spec.ts`. It needs `vault login --method oidc` for the EIS models.
 
 You finish Lab B with the triage eval running as a Kibana suite: three PRs, three code evaluators, the criteria judge and token counts, stored as an experiment in the evals UI. The spec is in the repo at `kbn-evals/evals/pr_triage.spec.ts`. Commands run from the Kibana repo root.
 
@@ -30,11 +30,19 @@ The first run asks for connectors, starts Scout and the EDOT collector, and runs
 
 ### B2. Add the spec and read it (2 min)
 
-Scaffold a suite named `lab` with the `evals-create-suite` agent skill, then copy `kbn-evals/playwright.config.ts` and `kbn-evals/evals/pr_triage.spec.ts` into it. Match the spec to the anatomy:
+Scaffold a suite named `lab` with the `evals-create-suite` agent skill. It creates `x-pack/platform/packages/shared/kbn-evals-suite-lab/` with `kibana.jsonc`, `package.json` and `tsconfig.json`. Then copy `kbn-evals/playwright.config.ts` and `kbn-evals/evals/pr_triage.spec.ts` from your clone of this repo (branch `lab-b`) into that package, keeping the `evals/` folder for the spec. Match the spec to the anatomy:
 
 1. **Dataset**: three PRs. The expected risk sits in each example's `output`; `mustCover` sits in `metadata`, because the criteria judge reads input, output and metadata.
 2. **Task**: one `inferenceClient.chatComplete` call, bound to the model of the current Playwright project, asking for JSON.
 3. **Evaluators**: `ValidJson`, `RiskMatches` and `NoUnderestimate` (CODE, each with `direction: 'maximize'`), `evaluators.criteria([...])` named `FocusCoverage`, and the trace-based `inputTokens` and `outputTokens`.
+
+### Before B3: point the results at Scout (1 min)
+
+`--profile local` exports results to the Elasticsearch and Kibana URLs in `x-pack/platform/packages/shared/kbn-evals/scripts/vault/config.local.json`, which default to `localhost:9200` and `localhost:5601`: a separate dev stack (`pnpm es snapshot` and `pnpm start`). The Scout stack that `evals start` launches listens elsewhere (ES `:9220`, Kibana `:5620`). Either run the dev stack, or point everything at Scout's ports:
+- In `config.local.json`: the two Elasticsearch URLs to `:9220`, and the Kibana URL to `:5620` (no `/dev` base path).
+- In the EDOT collector config, `data/edot_collector/otel-collector-config.yml` (generated and gitignored): change `endpoint: http://host.docker.internal:9200` to `:9220`, then `docker restart kibana-edot-collector`. The collector hardcodes `:9200`; without this change every span export fails with `connection refused`, `trace.id` never exists, and `inputTokens`/`outputTokens` score null (the Tokens column shows `-`).
+
+B4 reads the results from the Kibana you set up here.
 
 ### B3. Run it against two models (2 min)
 
@@ -52,8 +60,4 @@ Gotchas:
 
 ### B4. Compare in the UI (1 min)
 
-`--profile local` exports results to the Elasticsearch and Kibana URLs in `x-pack/platform/packages/shared/kbn-evals/scripts/vault/config.local.json`, which default to `localhost:9200` and `localhost:5601`: a separate dev stack (`pnpm es snapshot` and `pnpm start`). The Scout stack that `evals start` launches listens elsewhere (ES `:9220`, Kibana `:5620`). Either run the dev stack, or point everything at Scout's ports:
-- In `config.local.json`: the two Elasticsearch URLs to `:9220`, and the Kibana URL to `:5620` (no `/dev` base path).
-- In the EDOT collector config, `data/edot_collector/otel-collector-config.yml` (generated and gitignored): change `endpoint: http://host.docker.internal:9200` to `:9220`, then `docker restart kibana-edot-collector`. The collector hardcodes `:9200`; without this change every span export fails with `connection refused`, `trace.id` never exists, and `inputTokens`/`outputTokens` score null (the Tokens column shows `-`).
-
-In the Kibana your profile exports to (local: the URL in `config.local.json`), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired t-test per evaluator), or run `EVAL_KBN_URL=<kibana-url> node scripts/evals compare <exp-1> <exp-2>` (the experiment ids are printed at the end of each run; `compare` has no `--profile` flag and reads `EVAL_KBN_URL`, for Scout use `http://elastic:changeme@localhost:5620`). The Tracing tab shows the spans the token evaluators read.
+In the Kibana your profile exports to (set up before B3), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired t-test per evaluator), or run `EVAL_KBN_URL=<kibana-url> node scripts/evals compare <exp-1> <exp-2>` (the experiment ids are printed at the end of each run; `compare` has no `--profile` flag and reads `EVAL_KBN_URL`, for Scout use `http://elastic:changeme@localhost:5620`). The Tracing tab shows the spans the token evaluators read.
