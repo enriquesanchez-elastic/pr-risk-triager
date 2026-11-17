@@ -10,7 +10,7 @@ The tool is `pr-risk-triager`: give it a pull request and it returns a risk leve
 
 | Part | Time | Branch | Guide | Needs |
 | --- | --- | --- | --- | --- |
-| Lab A: Python + pydantic-evals | 18 min | `lab-a` | [`LAB-A.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-a/LAB-A.md) | Python 3.12, uv; `els` signed in to the gateway from step A4 on (optional) |
+| Lab A: Python + pydantic-evals | 18 min | `lab-a` | [`LAB-A.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-a/LAB-A.md) | Python 3.12, uv; `els` signed in to the gateway (optional: every step has an offline `stand-in` route) |
 | Evals in Kibana (walkthrough) | about 20 min | none | slides | Nothing |
 | Lab B: @kbn/evals | 7 min | `lab-b` | [`LAB-B.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-b/LAB-B.md) | A Kibana checkout, bootstrapped; `vault login --method oidc` for EIS models |
 
