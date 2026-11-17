@@ -1,8 +1,16 @@
-# Lab B: the same eval in @kbn/evals
+# Lab B: the triage use case in @kbn/evals
 
 **This is a reduced version of the Lab A use case, not the same experiment.** It has 3 cases instead of 10, a different prompt, plain JSON parsing instead of structured output, no fallback check, and different evaluators, so Lab A and Lab B scores are not comparable. Also, "2 passed" means the two Playwright tests (one per model) ran to the end. The spec records scores and asserts no minimum, so it says nothing about quality. With 3 examples the comparison page shows you how the UI works; it is too little data to choose a model, and "no significant difference" there means not enough evidence, not that the models are equal.
 
 Verified on upstream Kibana `main`, November 2026, in a clean `git worktree`: bootstrap, scaffold, B3 against `eis-google-gemini-3-0-flash` and `eis-openai-gpt-5-2` with `eis-anthropic-claude-4-6-sonnet` as judge (2 passed), and `node scripts/evals compare`. The `inputTokens`/`outputTokens` evaluators only produce scores once the EDOT collector exports to Scout's Elasticsearch (see B4); the UI half of B4 was not opened. Facilitators: run B1 yourself before the session.
+
+## Prework (do this before the session)
+
+Lab B in the room is B2 to B4. These three things are prework, because each one can take longer than the exercise itself:
+
+1. A bootstrapped Kibana checkout (below), with `node scripts/evals doctor` passing.
+2. B1: the smoke-tests suite passes on your machine.
+3. "Point the results at Scout": the port edits in `config.local.json` and the EDOT collector config.
 
 ## Before you start
 
@@ -38,7 +46,7 @@ Scaffold a suite named `lab` with the `evals-create-suite` agent skill. It creat
 2. **Task**: one `inferenceClient.chatComplete` call, bound to the model of the current Playwright project, asking for JSON.
 3. **Evaluators**: `ValidJson`, `RiskMatches` and `NoUnderestimate` (CODE, each with `direction: 'maximize'`), `evaluators.criteria([...])` named `FocusCoverage`, and the trace-based `inputTokens` and `outputTokens`.
 
-### Before B3: point the results at Scout
+### Before B3: point the results at Scout (prework)
 
 `--profile local` exports results to the Elasticsearch and Kibana URLs in `x-pack/platform/packages/shared/kbn-evals/scripts/vault/config.local.json`, which default to `localhost:9200` and `localhost:5601`: a separate dev stack (`pnpm es snapshot` and `pnpm start`). The Scout stack that `evals start` launches listens elsewhere (ES `:9220`, Kibana `:5620`). Either run the dev stack, or point everything at Scout's ports:
 - In `config.local.json`: the two Elasticsearch URLs to `:9220`, and the Kibana URL to `:5620` (no `/dev` base path).
