@@ -16,7 +16,8 @@ You finish Lab A with an `evals/` folder: a 10-case dataset, four code evaluator
 | `evals/dataset.yaml` | 10 labelled PRs: inputs, expected risk, `must_cover`, metadata |
 | `evals/evaluators.py` | `RiskMatches`, `NoUnderestimate`, `SpecificFocus`, `NotFallback`, `focus_judge()`, the confusion matrix |
 | `evals/check_evaluators.py` | The evaluators run on 4 recorded outputs, no model |
-| `evals/run_evals.py` | The eval: `--model`, `--baseline`, `--repeat`, `--gate`, `--name` |
+| `evals/check_judge.py` | Calibrate the LLM judge against 4 outputs a human has labelled (needs the gateway) |
+| `evals/run_evals.py` | The eval: `--model`, `--baseline`, `--repeat`, `--gate`, `--name`, `--save`, `--against` |
 | `evals/stand_in.py` | A weak keyword model for running without the gateway |
 
 ### A1. See the gap (2 min)
@@ -40,6 +41,8 @@ Your edit stays in your working tree. Before you switch to the `lab-b` branch, u
 
 ### A3. Evaluators, checked before you trust them (4 min)
 
+**Predict first.** Before you run anything, copy the table below onto paper with the cells empty and fill in what you expect each evaluator to say for each recorded case (open `evals/check_evaluators.py` to see the four outputs, but not the `EXPECTED` table). Then run:
+
 ```bash
 uv run python -m evals.check_evaluators
 ```
@@ -53,13 +56,19 @@ Open `evals/evaluators.py` and `evals/check_evaluators.py`. Each evaluator answe
 | dangerous miss | ✗ | ✗ | ✔ | ✔ |
 | silent fallback | ✔ | ✔ | ✗ | ✗ |
 
+The script now asserts this table (`EXPECTED` in the file) and exits 1 if an evaluator disagrees, so you can change an evaluator and see at once what moved. Count your wrong cells: each is a place where you would have trusted a check that does something else.
+
 The last row is the lesson: the canned fallback gets the risk right for the wrong reason. Only `SpecificFocus` and `NotFallback` catch it.
+
+**Blind spots.** The script ends by showing two outputs a human would fail, and `SpecificFocus` passes both: an empty focus list, and focus areas about a shopping checkout for an alerts PR. `SpecificFocus` only catches boilerplate such as "General regression testing"; it is a heuristic, not a measure of quality. Say which check in A5 is meant to catch these.
 
 ### A4. Run the triager (4 min)
 
 ```bash
 uv run python -m evals.run_evals --model stand-in
 ```
+
+**Read one failure.** In the table, pick one case where `RiskMatches` is ✗. Open its `must_cover` in `evals/dataset.yaml` and its output in the report. In one sentence: which behaviour did the model miss, and why did the keyword rule fire? (For `rule-schedule-migration` the word "rename" in the title decides it.)
 
 Open `evals/run_evals.py` (and `evals/stand_in.py`): the `task` function is the whole integration. It calls `triage()` and records one signal from inside the tool: whether the "using fallback" warning fired.
 
@@ -97,6 +106,8 @@ JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --baseline stand-
 
 With Gemini as the model and Claude as judge, expect `LLMJudge` around 90%.
 
+**Calibrate the judge** (signed in): `JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.check_judge`. It runs the judge on four outputs for one PR that a human has labelled: one covers both required behaviours, one covers only one, one covers both in different words, one is specific but off topic. Predict the judge's four verdicts first. Any disagreement with the human labels means the `LLMJudge` column is not yet trustworthy: tighten the rubric in `focus_judge()` and run it again.
+
 ### A6. Repeat and gate (2 min)
 
 ```bash
@@ -113,6 +124,16 @@ JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --model gpt-5.4 -
 ```
 
 We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by its own family, so prefer a Gemini or GPT judge for it); `gpt-5.4` **fails** `NoUnderestimate`, in every run we saw. In one run: `RiskMatches` 90%, `NoUnderestimate` 90%, `LLMJudge` 83%, with 3 misses in 30 runs, all `viewer-api-keys`, a `high` PR that GPT rates `medium`. In a second run: `RiskMatches` 93%, `NoUnderestimate` 93%, `SpecificFocus` 90%, `LLMJudge` 93%, with 2 misses in 30 runs. The scores move by a few points between runs; the gate result should not. Your numbers will differ. Same PRs, same prompt, different model: that is the case for evals.
+
+**Change one thing, compare.** Save a baseline, change one thing, run again against it, with the dataset and model fixed:
+
+```bash
+uv run python -m evals.run_evals --model stand-in --save before.json
+# edit evals/stand_in.py: delete "rename" from the LOW keywords
+uv run python -m evals.run_evals --model stand-in --against before.json
+```
+
+The report lists every case whose risk or verdict changed. Deleting `rename` fixes `rule-schedule-migration` (NoUnderestimate goes to 100%) and breaks `rename-internal-hook`, so `RiskMatches` does not move: one fix traded for one new miss. `before.json` records the model, a hash of the prompt and of the dataset, and a timestamp, so you can tell later what produced it. With a real model, change `INSTRUCTIONS` in `src/triager/triage.py` instead and compare the same way. Note that `--baseline` is different: it runs a second model now, it does not load a saved run.
 
 Open `.github/workflows/evals.yml`. What you have built is a local gate. In CI the workflow runs the stand-in as a pipeline check and does not yet enforce a quality threshold, so a failing score does not fail the job today. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
 

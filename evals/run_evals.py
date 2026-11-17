@@ -13,6 +13,9 @@ Gateway models need an Okta token: run `els auth login --env $ELS_ENV` (default 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+from datetime import datetime, timezone
 import logging
 import os
 import sys
@@ -27,6 +30,7 @@ from evals.evaluators import all_evaluators, risk_confusion_matrix
 from evals.stand_in import stand_in_model
 from triager import PullRequest, triage
 from triager.gateway import els_token
+from triager.triage import INSTRUCTIONS
 
 DATASET = Path(__file__).with_name("dataset.yaml")
 MUST_PASS = ("NotFallback", "NoUnderestimate")  # any failure here fails the gate
@@ -102,11 +106,52 @@ def gate_failures(report: EvaluationReport, threshold: float) -> list[str]:
     return failed
 
 
+def save_report(report: Any, path: Path, model: str | None, prompt: str | None = None) -> None:
+    """Persist one run so a later run can be compared against it: outputs, verdicts, and what produced them."""
+    prompt = INSTRUCTIONS if prompt is None else prompt
+    cases = {
+        c.name: {
+            "risk": c.output["risk"],
+            "focus_areas": c.output["focus_areas"],
+            "fallback_used": c.output.get("fallback_used"),
+            "assertions": {k: bool(v.value) for k, v in c.assertions.items()},
+        }
+        for c in report.cases
+    }
+    meta = {
+        "model": model,
+        "prompt_sha": hashlib.sha256(prompt.encode()).hexdigest()[:12],
+        "dataset_sha": hashlib.sha256(DATASET.read_bytes()).hexdigest()[:12] if DATASET.exists() else None,
+        "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    path.write_text(json.dumps({**meta, "cases": cases}, indent=2))
+
+
+def diff_runs(report: Any, saved: Path) -> list[str]:
+    """What changed against a saved run, per case: the risk label and every evaluator verdict that flipped."""
+    old = json.loads(saved.read_text())["cases"]
+    lines: list[str] = []
+    for c in report.cases:
+        before = old.get(c.name)
+        if before is None:
+            lines.append(f"{c.name}: not in the saved run")
+            continue
+        if before["risk"] != c.output["risk"]:
+            lines.append(f"{c.name}: risk {before['risk']} -> {c.output['risk']}")
+        for name, was in before["assertions"].items():
+            now = bool(c.assertions[name].value) if name in c.assertions else None
+            if now != was:
+                lines.append(f"{c.name}: {name} {was} -> {now}")
+    return lines
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default=None, help="pydantic-ai model id, or 'stand-in'")
     parser.add_argument("--baseline", default=None, help="second model to compare against")
     parser.add_argument("--name", default=None, help="experiment name, e.g. prompt-v2")
+    parser.add_argument("--save", type=Path, default=None, help="write this run to a JSON file")
+    parser.add_argument("--against", type=Path, default=None, help="compare this run with a file saved by --save")
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--gate", type=float, default=None, help="minimum RiskMatches pass rate")
     args = parser.parse_args()
@@ -121,6 +166,13 @@ def main() -> int:
     baseline = run(dataset, args.baseline, None, args.repeat) if args.baseline else None
     report = run(dataset, args.model, args.name, args.repeat)
     report.print(baseline=baseline, include_reasons=True)
+
+    if args.save:
+        save_report(report, args.save, model=args.model)
+        print(f"saved to {args.save}")
+    if args.against:
+        changes = diff_runs(report, args.against)
+        print("\nChanges against " + str(args.against) + ":\n  " + ("\n  ".join(changes) if changes else "none"))
 
     rates = pass_rates(report)
     print("\n" + "  ".join(f"{k}={v:.0%}" for k, v in rates.items()))
