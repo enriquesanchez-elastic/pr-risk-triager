@@ -20,7 +20,7 @@ You finish Lab A with an `evals/` folder: a 10-case dataset, four code evaluator
 | `evals/run_evals.py` | The eval: `--model`, `--baseline`, `--repeat`, `--gate`, `--name`, `--save`, `--against` |
 | `evals/stand_in.py` | A weak keyword model for running without the gateway |
 
-### A1. See the gap (2 min)
+### A1. See the gap
 
 ```bash
 uv run pytest
@@ -29,7 +29,7 @@ uv run triage examples/pr_pagination.json
 
 Tests pass and the CLI prints a triage. No gateway access? Use the offline model: `uv run triage examples/pr_pagination.json --model stand-in`. **Check the output is a real answer.** If the gateway call failed, the triager logs `using fallback` and prints a canned result: risk `medium` with "General regression testing" as the focus. That result looks plausible and is not an analysis. A medium rating on the pagination PR is also what the labeller expects, so the fallback can look right for the wrong reason. This is the failure A3 is built to catch. Now answer: would you let this rate PRs for your team? What would you need to see first?
 
-### A2. The dataset (4 min)
+### A2. The dataset
 
 Open `evals/dataset.yaml`. Each case has the PR as `inputs` and an `expected_output` that is a spec, not an exact answer: the risk label plus `must_cover`, the behaviours a QA engineer would insist on.
 
@@ -39,7 +39,7 @@ Add one case from your own team's recent PRs. Agree its label with your neighbou
 
 Your edit stays in your working tree. Before you switch to the `lab-b` branch, undo it with `git restore evals/dataset.yaml` (or keep it with `git stash`), or Git will refuse to switch.
 
-### A3. Evaluators, checked before you trust them (4 min)
+### A3. Evaluators, checked before you trust them
 
 **Predict first.** Before you run anything, copy the table below onto paper with the cells empty and fill in what you expect each evaluator to say for each recorded case (open `evals/check_evaluators.py` to see the four outputs, but not the `EXPECTED` table). Then run:
 
@@ -62,7 +62,7 @@ The last row is the lesson: the canned fallback gets the risk right for the wron
 
 **Blind spots.** The script ends by showing two outputs a human would fail, and `SpecificFocus` passes both: an empty focus list, and focus areas about a shopping checkout for an alerts PR. `SpecificFocus` only catches boilerplate such as "General regression testing"; it is a heuristic, not a measure of quality. Say which check in A5 is meant to catch these.
 
-### A4. Run the triager (4 min)
+### A4. Run the triager
 
 ```bash
 uv run python -m evals.run_evals --model stand-in
@@ -94,7 +94,7 @@ The preflight warns, but the run completes and nothing crashes: every PR comes b
 
 With Gemini 3.7 Flash the baseline scores 100% on all four code evaluators. A perfect score on 10 cases is a ceiling, not proof the triager is good: which cases would you add to make it fail?
 
-### A5. Judge and compare (2 min)
+### A5. Judge and compare
 
 Code checks the label; only a judge can say whether the focus areas cover `must_cover`. Use a different model family from the one being evaluated.
 
@@ -108,7 +108,7 @@ With Gemini as the model and Claude as judge, expect `LLMJudge` around 90%.
 
 **Calibrate the judge** (signed in): `JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.check_judge`. It runs the judge on four outputs for one PR that a human has labelled: one covers both required behaviours, one covers only one, one covers both in different words, one is specific but off topic. Predict the judge's four verdicts first. Any disagreement with the human labels means the `LLMJudge` column is not yet trustworthy: tighten the rubric in `focus_judge()` and run it again.
 
-### A6. Repeat and gate (2 min)
+### A6. Repeat and gate
 
 ```bash
 uv run python -m evals.run_evals --model stand-in --repeat 3 --gate 0.8

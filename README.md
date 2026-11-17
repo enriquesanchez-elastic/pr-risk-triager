@@ -33,7 +33,7 @@ GPT models go through the gateway's Responses API, everything else through chat 
 The unit tests pass and CI is green. Nobody knows whether the triage is any good.
 That is what the workshop fixes: this repo has **no evals yet**.
 
-**Running the session? Start with [GUIDE.md](GUIDE.md).** The session takes about an hour, 25 of them hands-on.
+**Running the session? Start with [GUIDE.md](GUIDE.md).**
 
 ## Branches
 

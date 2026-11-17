@@ -2,17 +2,17 @@
 
 ## Before you start
 
-The session takes about an hour, 25 of them hands-on. You take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
+You take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
 
 The tool is `pr-risk-triager`: give it a pull request and it returns a risk level (`low`, `medium`, `high`), up to 5 focus areas for QA, and a rationale. It is one LLM call through pydantic-ai and Elastic's LLM gateway (AgentRouter).
 
 ## Which branch, which guide
 
-| Part | Time | Branch | Guide | Needs |
-| --- | --- | --- | --- | --- |
-| Lab A: Python + pydantic-evals | 18 min | `lab-a` | [`LAB-A.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-a/LAB-A.md) | Python 3.12, uv; `els` signed in to the gateway from step A4 on (optional) |
-| Evals in Kibana (walkthrough) | about 20 min | none | slides | Nothing |
-| Lab B: @kbn/evals | 7 min | `lab-b` | [`LAB-B.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-b/LAB-B.md) | A Kibana checkout, bootstrapped; `vault login --method oidc` for EIS models |
+| Part | Branch | Guide | Needs |
+| --- | --- | --- | --- |
+| Lab A: Python + pydantic-evals | `lab-a` | [`LAB-A.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-a/LAB-A.md) | Python 3.12, uv; `els` signed in to the gateway (optional: every step has an offline `stand-in` route) |
+| Evals in Kibana (walkthrough) | none | slides | Nothing |
+| Lab B: @kbn/evals | `lab-b` | [`LAB-B.md`](https://github.com/enriquesanchez-elastic/pr-risk-triager/blob/lab-b/LAB-B.md) | A Kibana checkout, bootstrapped; `vault login --method oidc` for EIS models |
 
 `main` is the starting point: the tool, 8 unit tests, CI running pytest, no evals. Lab A is on `lab-a` (`main` plus the full `evals/` folder). Lab B is on `lab-b` (`main` plus `kbn-evals/`; its files are copied into a Kibana checkout).
 
