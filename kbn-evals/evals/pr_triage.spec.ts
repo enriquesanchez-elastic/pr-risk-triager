@@ -50,7 +50,12 @@ const validJson: Evaluator = {
   direction: 'maximize',
   evaluate: async ({ output }) => {
     const triage = (output as TaskOutput).triage;
-    const ok = !!triage && !!triage.risk && Array.isArray(triage.focus_areas);
+    const ok =
+      !!triage &&
+      ['low', 'medium', 'high'].includes(triage.risk as string) &&
+      Array.isArray(triage.focus_areas) &&
+      triage.focus_areas.length <= 5 &&
+      triage.focus_areas.every((a) => typeof a === 'string');
     return { score: ok ? 1 : 0, label: ok ? 'valid' : 'invalid' };
   },
 };

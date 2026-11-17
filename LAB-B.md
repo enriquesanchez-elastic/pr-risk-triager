@@ -1,5 +1,7 @@
 # Lab B: the same eval in @kbn/evals
 
+**This is a reduced version of the Lab A use case, not the same experiment.** It has 3 cases instead of 10, a different prompt, plain JSON parsing instead of structured output, no fallback check, and different evaluators, so Lab A and Lab B scores are not comparable. Also, "2 passed" means the two Playwright tests (one per model) ran to the end. The spec records scores and asserts no minimum, so it says nothing about quality. With 3 examples the comparison page shows you how the UI works; it is too little data to choose a model, and "no significant difference" there means not enough evidence, not that the models are equal.
+
 Verified on upstream Kibana `main`, November 2026, in a clean `git worktree`: bootstrap, scaffold, B3 against `eis-google-gemini-3-0-flash` and `eis-openai-gpt-5-2` with `eis-anthropic-claude-4-6-sonnet` as judge (2 passed, about 3.6 min), and `node scripts/evals compare`. The `inputTokens`/`outputTokens` evaluators only produce scores once the EDOT collector exports to Scout's Elasticsearch (see B4); the UI half of B4 was not opened. Facilitators: run B1 yourself before the session.
 
 ## Before you start
@@ -60,4 +62,4 @@ Gotchas:
 
 ### B4. Compare in the UI (1 min)
 
-In the Kibana your profile exports to (set up before B3), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired t-test per evaluator), or run `EVAL_KBN_URL=<kibana-url> node scripts/evals compare <exp-1> <exp-2>` (the experiment ids are printed at the end of each run; `compare` has no `--profile` flag and reads `EVAL_KBN_URL`, for Scout use `http://elastic:changeme@localhost:5620`). The Tracing tab shows the spans the token evaluators read.
+In the Kibana your profile exports to (set up before B3), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired statistical comparison per evaluator; the test depends on the score type), or run `EVAL_KBN_URL=<kibana-url> node scripts/evals compare <exp-1> <exp-2>` (the experiment ids are printed at the end of each run; `compare` has no `--profile` flag and reads `EVAL_KBN_URL`, for Scout use `http://elastic:changeme@localhost:5620`). The Tracing tab shows the spans the token evaluators read.
