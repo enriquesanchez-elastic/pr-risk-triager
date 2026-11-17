@@ -2,7 +2,7 @@
 
 **This is a reduced version of the Lab A use case, not the same experiment.** It has 3 cases instead of 10, a different prompt, plain JSON parsing instead of structured output, no fallback check, and different evaluators, so Lab A and Lab B scores are not comparable. Also, "2 passed" means the two Playwright tests (one per model) ran to the end. The spec records scores and asserts no minimum, so it says nothing about quality. With 3 examples the comparison page shows you how the UI works; it is too little data to choose a model, and "no significant difference" there means not enough evidence, not that the models are equal.
 
-Verified on upstream Kibana `main`, November 2026, in a clean `git worktree`: bootstrap, scaffold, B3 against `eis-google-gemini-3-0-flash` and `eis-openai-gpt-5-2` with `eis-anthropic-claude-4-6-sonnet` as judge (2 passed, about 3.6 min), and `node scripts/evals compare`. The `inputTokens`/`outputTokens` evaluators only produce scores once the EDOT collector exports to Scout's Elasticsearch (see B4); the UI half of B4 was not opened. Facilitators: run B1 yourself before the session.
+Verified on upstream Kibana `main`, November 2026, in a clean `git worktree`: bootstrap, scaffold, B3 against `eis-google-gemini-3-0-flash` and `eis-openai-gpt-5-2` with `eis-anthropic-claude-4-6-sonnet` as judge (2 passed), and `node scripts/evals compare`. The `inputTokens`/`outputTokens` evaluators only produce scores once the EDOT collector exports to Scout's Elasticsearch (see B4); the UI half of B4 was not opened. Facilitators: run B1 yourself before the session.
 
 ## Before you start
 
@@ -22,7 +22,7 @@ You finish Lab B with the triage eval running as a Kibana suite: three PRs, thre
 
 Lab B calls models through Kibana connectors, not the LLM gateway, so `els` is not involved.
 
-### B1. Validate your setup (2 min)
+### B1. Validate your setup (prework)
 
 ```bash
 node scripts/evals start --suite smoke-tests --profile local
@@ -30,7 +30,7 @@ node scripts/evals start --suite smoke-tests --profile local
 
 The first run asks for connectors, starts Scout and the EDOT collector, and runs the smoke suite; later runs reuse the services. If it fails, run `node scripts/evals doctor`.
 
-### B2. Add the spec and read it (2 min)
+### B2. Add the spec and read it
 
 Scaffold a suite named `lab` with the `evals-create-suite` agent skill. It creates `x-pack/platform/packages/shared/kbn-evals-suite-lab/` with `kibana.jsonc`, `package.json` and `tsconfig.json`. Then copy `kbn-evals/playwright.config.ts` and `kbn-evals/evals/pr_triage.spec.ts` from your clone of this repo (branch `lab-b`) into that package, keeping the `evals/` folder for the spec. Match the spec to the anatomy:
 
@@ -46,7 +46,7 @@ Scaffold a suite named `lab` with the `evals-create-suite` agent skill. It creat
 
 B4 reads the results from the Kibana you set up here.
 
-### B3. Run it against two models (2 min)
+### B3. Run it against two models
 
 ```bash
 node scripts/evals start --profile local \
@@ -60,6 +60,6 @@ Gotchas:
 - Each `--model` must also be a Playwright project of the suite, and that list can lag the live connectors. If you see `Project(s) "<id>" not found`, the error lists the valid ids: pick one of those (for example `eis-google-gemini-3-0-flash`, not `eis-google-gemini-3-7-flash`).
 - Without a TTY (scripts, CI, an agent) the connector prompt can't appear. Pass `--evaluation-connector-id <judge-connector>` and `--model` explicitly. `node scripts/evals start` prints the re-run command with the ids it used.
 
-### B4. Compare in the UI (1 min)
+### B4. Compare in the UI
 
 In the Kibana your profile exports to (set up before B3), open `/app/management/ai/evals` → Experiments, select the two runs and use **Compare selected** (a paired statistical comparison per evaluator; the test depends on the score type), or run `EVAL_KBN_URL=<kibana-url> node scripts/evals compare <exp-1> <exp-2>` (the experiment ids are printed at the end of each run; `compare` has no `--profile` flag and reads `EVAL_KBN_URL`, for Scout use `http://elastic:changeme@localhost:5620`). The Tracing tab shows the spans the token evaluators read.
