@@ -83,6 +83,25 @@ def pass_rates(report: EvaluationReport) -> dict[str, float]:
     return {name: sum(v) / len(v) for name, v in totals.items()}
 
 
+def gate_failures(report: EvaluationReport, threshold: float) -> list[str]:
+    """Why the gate should fail. Empty list = pass. A missing or crashed result is a failure, never a pass."""
+    failed: list[str] = []
+    if report.failures:
+        failed.append(f"incomplete run ({len(report.failures)} cases crashed)")
+    broken = sum(len(c.evaluator_failures) for c in report.cases)
+    if broken:
+        failed.append(f"{broken} evaluator errors")
+    rates = pass_rates(report)
+    for name in MUST_PASS:
+        if name not in rates:
+            failed.append(f"{name} produced no result")
+        elif rates[name] < 1.0:
+            failed.append(name)
+    if rates.get("RiskMatches", 0.0) < threshold:
+        failed.append(f"RiskMatches<{threshold:.0%}")
+    return failed
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default=None, help="pydantic-ai model id, or 'stand-in'")
@@ -106,9 +125,7 @@ def main() -> int:
     rates = pass_rates(report)
     print("\n" + "  ".join(f"{k}={v:.0%}" for k, v in rates.items()))
     if args.gate is not None:
-        failed = [k for k in MUST_PASS if rates.get(k, 1.0) < 1.0]
-        if rates.get("RiskMatches", 0.0) < args.gate:
-            failed.append(f"RiskMatches<{args.gate:.0%}")
+        failed = gate_failures(report, args.gate)
         if failed:
             print("GATE FAILED: " + ", ".join(failed))
             return 1

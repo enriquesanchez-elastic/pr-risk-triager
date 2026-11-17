@@ -26,7 +26,7 @@ uv run pytest
 uv run triage examples/pr_pagination.json
 ```
 
-Tests pass and the CLI prints a triage. Now answer: would you let this rate PRs for your team? What would you need to see first?
+Tests pass and the CLI prints a triage. No gateway access? Use the offline model: `uv run triage examples/pr_pagination.json --model stand-in`. **Check the output is a real answer.** If the gateway call failed, the triager logs `using fallback` and prints a canned result: risk `medium` with "General regression testing" as the focus. That result looks plausible and is not an analysis. A medium rating on the pagination PR is also what the labeller expects, so the fallback can look right for the wrong reason. This is the failure A3 is built to catch. Now answer: would you let this rate PRs for your team? What would you need to see first?
 
 ### A2. The dataset (4 min)
 
@@ -35,6 +35,8 @@ Open `evals/dataset.yaml`. Each case has the PR as `inputs` and an `expected_out
 Note the mix: typical changes, edge cases (docs, refactor, devDependency bump), a migration whose title says "rename", and a typo fix whose description tries to inject instructions.
 
 Add one case from your own team's recent PRs. Agree its label with your neighbour. If you disagree, that disagreement is the most useful thing in the dataset.
+
+Your edit stays in your working tree. Before you switch to the `lab-b` branch, undo it with `git restore evals/dataset.yaml` (or keep it with `git stash`), or Git will refuse to switch.
 
 ### A3. Evaluators, checked before you trust them (4 min)
 
@@ -102,7 +104,7 @@ uv run python -m evals.run_evals --model stand-in --repeat 3 --gate 0.8
 echo $?
 ```
 
-Each case runs 3 times, so you see the spread. (Without `--model stand-in` the same command runs the default gateway model.) The gate exits 1 if any fallback happened, any risk was under-rated, or `RiskMatches` is below 80%. With the stand-in it fails on `NoUnderestimate`, as it should.
+Each case runs 3 times, so you see the spread. (Without `--model stand-in` the same command runs the default gateway model.) The gate exits 1 if any fallback happened, any risk was under-rated, `RiskMatches` is below 80%, or the run is incomplete (a case or an evaluator crashed, or a required score is missing). A missing result never counts as a pass. With the stand-in it fails on `NoUnderestimate`, as it should.
 
 With the real default model (`uv run python -m evals.run_evals --repeat 3 --gate 0.8`, signed in) the gate passes: all four code evaluators 100%, `GATE PASSED`, exit 0. Try the other families:
 
@@ -112,7 +114,7 @@ JUDGE_MODEL=claude-sonnet-4-6 uv run python -m evals.run_evals --model gpt-5.4 -
 
 We measured: `claude-sonnet-4-6` passes (`LLMJudge` 93%; note it is judged by its own family, so prefer a Gemini or GPT judge for it); `gpt-5.4` **fails** `NoUnderestimate`, in every run we saw. In one run: `RiskMatches` 90%, `NoUnderestimate` 90%, `LLMJudge` 83%, with 3 misses in 30 runs, all `viewer-api-keys`, a `high` PR that GPT rates `medium`. In a second run: `RiskMatches` 93%, `NoUnderestimate` 93%, `SpecificFocus` 90%, `LLMJudge` 93%, with 2 misses in 30 runs. The scores move by a few points between runs; the gate result should not. Your numbers will differ. Same PRs, same prompt, different model: that is the case for evals.
 
-Open `.github/workflows/evals.yml`. It runs the stand-in on every PR. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
+Open `.github/workflows/evals.yml`. What you have built is a local gate. In CI the workflow runs the stand-in as a pipeline check and does not yet enforce a quality threshold, so a failing score does not fail the job today. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
 
 ## Broke something?
 

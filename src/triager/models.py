@@ -21,6 +21,6 @@ class PullRequest(BaseModel):
 class TriageResult(BaseModel):
     risk: Risk = Field(description="How risky the change is to ship")
     focus_areas: list[str] = Field(
-        description="What QA should test first, most important first", max_length=6
+        description="What QA should test first, most important first", max_length=5
     )
     rationale: str = Field(description="One or two sentences explaining the risk rating")

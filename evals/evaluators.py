@@ -58,7 +58,7 @@ class NotFallback(Evaluator[dict, Output]):
     def evaluate(self, ctx: EvaluatorContext[dict, Output]) -> EvaluationReason:
         used = ctx.output.get("fallback_used")
         if used is None:
-            return EvaluationReason(value=True, reason="not instrumented")
+            return EvaluationReason(value=False, reason="not instrumented: fallback_used missing, so unknown")
         return EvaluationReason(value=not used, reason="fallback result" if used else "model answered")
 
 
