@@ -2,7 +2,7 @@
 
 ## Before you start
 
-You take a small AI tool with green CI and no evals to an eval suite with a CI gate (Lab A), then run the same eval as a Kibana suite and compare two models (Lab B).
+You take a small AI tool with green CI and no evals to an eval suite with a local quality gate (Lab A), then run a reduced version of the use case as a Kibana suite and compare two models (Lab B).
 
 The tool is `pr-risk-triager`: give it a pull request and it returns a risk level (`low`, `medium`, `high`), up to 5 focus areas for QA, and a rationale. It is one LLM call through pydantic-ai and Elastic's LLM gateway (AgentRouter).
 
