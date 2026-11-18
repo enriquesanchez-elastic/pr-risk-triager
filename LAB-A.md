@@ -133,6 +133,14 @@ uv run python -m evals.run_evals --model stand-in --against before.json
 
 The report lists every case whose risk or verdict changed. Deleting `rename` fixes `rule-schedule-migration` (NoUnderestimate goes to 100%) and breaks `rename-internal-hook`, so `RiskMatches` does not move: one fix traded for one new miss. `before.json` records the model, a hash of the prompt and of the dataset, and a timestamp, so you can tell later what produced it. With a real model, change `INSTRUCTIONS` in `src/triager/triage.py` instead and compare the same way. Note that `--baseline` is different: it runs a second model now, it does not load a saved run.
 
+**Discuss: would you ship the change?** Do not look at the aggregate. With a neighbour, write one sentence for each of these from your own `--against` output:
+
+1. **What got better:** which case, which verdict flipped, and is that evaluator in the gate?
+2. **What got worse:** which case, which verdict flipped, and is that error cheap or expensive in real use?
+3. **Your decision:** ship, do not ship, or run more first. Name the evidence you would want and how many cases would convince you.
+
+Here `RiskMatches` stays at 80%, so a team that watched only that number would call the change neutral. For shipping: the two errors are not equal, because rating a migration `low` is the one that ships a bug (`NoUnderestimate` is must-pass in the gate) and rating a harmless rename `medium` costs a reviewer a few minutes. Against: one case moved each way, in a keyword rule, on ten cases and one run, and deleting one word patches a symptom. Both answers are defensible. A decision with its evidence stated is the goal.
+
 Open `.github/workflows/evals.yml`. What you have built is a local gate. In CI the workflow runs the stand-in as a pipeline check and does not yet enforce a quality threshold, so a failing score does not fail the job today. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
 
 ## Before you switch to Lab B
