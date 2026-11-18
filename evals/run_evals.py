@@ -97,13 +97,23 @@ def gate_failures(report: EvaluationReport, threshold: float) -> list[str]:
         failed.append(f"{broken} evaluator errors")
     rates = pass_rates(report)
     for name in MUST_PASS:
-        if name not in rates:
+        absent = sum(name not in c.assertions for c in report.cases)
+        if not report.cases or absent == len(report.cases):
             failed.append(f"{name} produced no result")
+        elif absent:
+            failed.append(f"{name} missing on {absent} of {len(report.cases)} cases")
         elif rates[name] < 1.0:
             failed.append(name)
     if rates.get("RiskMatches", 0.0) < threshold:
         failed.append(f"RiskMatches<{threshold:.0%}")
     return failed
+
+
+STAND_IN = Path(__file__).with_name("stand_in.py")
+
+
+def _sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()[:12]
 
 
 def save_report(report: Any, path: Path, model: str | None, prompt: str | None = None) -> None:
@@ -120,11 +130,23 @@ def save_report(report: Any, path: Path, model: str | None, prompt: str | None =
     }
     meta = {
         "model": model,
-        "prompt_sha": hashlib.sha256(prompt.encode()).hexdigest()[:12],
-        "dataset_sha": hashlib.sha256(DATASET.read_bytes()).hexdigest()[:12] if DATASET.exists() else None,
+        "judge": os.environ.get("JUDGE_MODEL"),
+        "prompt_sha": _sha(prompt.encode()),
+        "dataset_sha": _sha(DATASET.read_bytes()) if DATASET.exists() else None,
+        # the stand-in's behaviour lives in its code, so its hash tells two stand-in runs apart
+        "stand_in_sha": _sha(STAND_IN.read_bytes()) if STAND_IN.exists() else None,
         "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     path.write_text(json.dumps({**meta, "cases": cases}, indent=2))
+
+
+def show_case(report: Any, name: str) -> str:
+    """The model's actual answer for one case, so you can read what it put on the test list."""
+    for c in report.cases:
+        if c.name == name:
+            areas = "\n".join(f"  - {a}" for a in c.output["focus_areas"])
+            return f"{c.name}: risk {c.output['risk']}\nfocus areas:\n{areas}\nrationale: {c.output.get('rationale', '')}"
+    return f"no case named {name!r}"
 
 
 def diff_runs(report: Any, saved: Path) -> list[str]:
@@ -150,6 +172,7 @@ def main() -> int:
     parser.add_argument("--model", default=None, help="pydantic-ai model id, or 'stand-in'")
     parser.add_argument("--baseline", default=None, help="second model to compare against")
     parser.add_argument("--name", default=None, help="experiment name, e.g. prompt-v2")
+    parser.add_argument("--show", default=None, metavar="CASE", help="print the model's output for one case")
     parser.add_argument("--save", type=Path, default=None, help="write this run to a JSON file")
     parser.add_argument("--against", type=Path, default=None, help="compare this run with a file saved by --save")
     parser.add_argument("--repeat", type=int, default=1)
@@ -167,8 +190,10 @@ def main() -> int:
     report = run(dataset, args.model, args.name, args.repeat)
     report.print(baseline=baseline, include_reasons=True)
 
+    if args.show:
+        print("\n" + show_case(report, args.show))
     if args.save:
-        save_report(report, args.save, model=args.model)
+        save_report(report, args.save, model=args.model or os.environ.get("TRIAGER_MODEL", "gemini-3.7-flash"))
         print(f"saved to {args.save}")
     if args.against:
         changes = diff_runs(report, args.against)

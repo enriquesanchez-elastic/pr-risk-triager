@@ -1,4 +1,4 @@
-# Lab A: from zero evals to a CI gate
+# Lab A: from zero evals to a local quality gate
 
 Start here:
 
@@ -9,7 +9,7 @@ uv sync
 
 Lab A needs Python 3.12 and uv. From step A4 on, the real model needs `els auth login --env prod` (optional: `--model stand-in` runs without it). The settings table is in [GUIDE.md](GUIDE.md).
 
-You finish Lab A with an `evals/` folder: a 10-case dataset, four code evaluators, an optional LLM judge, a confusion matrix and a gate that fails CI. Every file is already in `evals/` on this branch, so you spend the time reading and running, not typing. All commands run from the repo root on `lab-a`.
+You finish Lab A with an `evals/` folder: a 10-case dataset, four code evaluators, an optional LLM judge, a confusion matrix and a local gate that fails the run (CI wiring is outlined, not enforced). Every file is already in `evals/` on this branch, so you spend the time reading and running, not typing. All commands run from the repo root on `lab-a`.
 
 | File | What it holds |
 | --- | --- |
@@ -36,8 +36,6 @@ Open `evals/dataset.yaml`. Each case has the PR as `inputs` and an `expected_out
 Note the mix: typical changes, edge cases (docs, refactor, devDependency bump), a migration whose title says "rename", and a typo fix whose description tries to inject instructions.
 
 Add one case from your own team's recent PRs. Agree its label with your neighbour. If you disagree, that disagreement is the most useful thing in the dataset.
-
-Your edit stays in your working tree. Before you switch to the `lab-b` branch, undo it with `git restore evals/dataset.yaml` (or keep it with `git stash`), or Git will refuse to switch.
 
 ### A3. Evaluators, checked before you trust them
 
@@ -68,7 +66,7 @@ The last row is the lesson: the canned fallback gets the risk right for the wron
 uv run python -m evals.run_evals --model stand-in
 ```
 
-**Read one failure.** In the table, pick one case where `RiskMatches` is ✗. Open its `must_cover` in `evals/dataset.yaml` and its output in the report. In one sentence: which behaviour did the model miss, and why did the keyword rule fire? (For `rule-schedule-migration` the word "rename" in the title decides it.)
+**Read one failure.** In the table, pick one case where `RiskMatches` is ✗. Open its `must_cover` in `evals/dataset.yaml`, and print the model's actual answer for it: `uv run python -m evals.run_evals --model stand-in --show <case-name>` (the report table does not show outputs). In one sentence: which behaviour did the model miss, and why did the keyword rule fire? (For `rule-schedule-migration` the word "rename" in the title decides it.)
 
 Open `evals/run_evals.py` (and `evals/stand_in.py`): the `task` function is the whole integration. It calls `triage()` and records one signal from inside the tool: whether the "using fallback" warning fired.
 
@@ -136,6 +134,17 @@ uv run python -m evals.run_evals --model stand-in --against before.json
 The report lists every case whose risk or verdict changed. Deleting `rename` fixes `rule-schedule-migration` (NoUnderestimate goes to 100%) and breaks `rename-internal-hook`, so `RiskMatches` does not move: one fix traded for one new miss. `before.json` records the model, a hash of the prompt and of the dataset, and a timestamp, so you can tell later what produced it. With a real model, change `INSTRUCTIONS` in `src/triager/triage.py` instead and compare the same way. Note that `--baseline` is different: it runs a second model now, it does not load a saved run.
 
 Open `.github/workflows/evals.yml`. What you have built is a local gate. In CI the workflow runs the stand-in as a pipeline check and does not yet enforce a quality threshold, so a failing score does not fail the job today. The real gate needs a gateway identity CI can use: not `els` (that is for people), but an approved GCP service account with a Google ID token, as the comments in the workflow explain.
+
+## Before you switch to Lab B
+
+You edited files in this branch (`evals/dataset.yaml` in A2, `evals/stand_in.py` in A6). Git will refuse to switch branches while they are modified. Keep your work, then switch:
+
+```bash
+git stash -u -m "lab a work"      # keeps every edit; get it back later with: git stash pop
+git checkout lab-b
+```
+
+If you do not want your edits any more, use `git restore evals/ && git checkout lab-b` instead.
 
 ## Broke something?
 

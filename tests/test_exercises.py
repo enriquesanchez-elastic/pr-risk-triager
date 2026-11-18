@@ -47,3 +47,35 @@ def test_judge_calibration_cases_are_labelled_both_ways():
     verdicts = [v for _, v in check_judge.HUMAN.values()]
     assert any(verdicts) and not all(verdicts)
     assert len(check_judge.HUMAN) == 4
+
+
+def test_blind_spots_call_the_real_evaluator(monkeypatch):
+    # If SpecificFocus is changed to reject these outputs, the demonstration must say so.
+    from dataclasses import dataclass
+
+    from pydantic_evals.evaluators import EvaluationReason, Evaluator
+
+    @dataclass
+    class SpecificFocus(Evaluator):
+        def evaluate(self, ctx):
+            return EvaluationReason(value=False, reason="strict")
+
+    monkeypatch.setattr(ce, "SpecificFocus", SpecificFocus)
+    assert ce.blind_spots() == {"empty focus areas": False, "unrelated advice": False}
+
+
+def test_show_case_prints_the_model_output():
+    from evals.run_evals import show_case
+
+    case = NS(name="c1", output={"risk": "low", "focus_areas": ["a", "b"], "rationale": "because"})
+    text = show_case(NS(cases=[case]), "c1")
+    assert "low" in text and "a" in text and "because" in text
+    assert "no case" in show_case(NS(cases=[case]), "zzz")
+
+
+def test_saved_run_records_resolved_model_judge_and_code_version(tmp_path, monkeypatch):
+    monkeypatch.setenv("JUDGE_MODEL", "claude-x")
+    path = tmp_path / "r.json"
+    save_report(_report("high", True), path, model="gemini-resolved")
+    data = json.loads(path.read_text())
+    assert data["model"] == "gemini-resolved" and data["judge"] == "claude-x" and data["stand_in_sha"]

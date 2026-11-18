@@ -86,8 +86,14 @@ BLIND = {
 
 
 def blind_spots() -> dict[str, bool]:
-    """What SpecificFocus says about each bad output (True means it passed them)."""
-    return {name: not any(GENERIC.search(a) for a in out["focus_areas"]) for name, out in BLIND.items()}
+    """Run each bad output through the real SpecificFocus. True means the evaluator passed it."""
+    blind = Dataset[dict, Any, dict](
+        name="blind-spots",
+        cases=[Case(name=n, inputs={"recorded": out}, expected_output={"risk": "high", "must_cover": []}) for n, out in BLIND.items()],
+        evaluators=[SpecificFocus()],
+    )
+    report = blind.evaluate_sync(lambda inputs: inputs["recorded"], progress=False)
+    return {c.name: bool(c.assertions["SpecificFocus"].value) for c in report.cases}
 
 
 if __name__ == "__main__":

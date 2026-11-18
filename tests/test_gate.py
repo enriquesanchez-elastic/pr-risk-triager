@@ -40,3 +40,10 @@ def test_crashed_required_evaluator_fails():
 def test_task_failures_fail():
     failed = gate_failures(report([case(**GOOD)], failures=[object()]), 0.8)
     assert any("incomplete" in f for f in failed)
+
+
+def test_one_case_missing_a_required_score_fails():
+    # NoUnderestimate scored 9 cases and produced nothing for the 10th: the aggregate looks complete.
+    missing = NS(assertions={k: NS(value=True) for k in ("RiskMatches", "NotFallback")}, evaluator_failures=[])
+    failed = gate_failures(report([case(**GOOD)] * 9 + [missing]), 0.8)
+    assert any("NoUnderestimate" in f and "1" in f for f in failed)
